@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
+from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_db, get_current_user, require_roles
 from app.models.oficina import Oficina
@@ -12,9 +14,14 @@ router = APIRouter(prefix="", tags=["oficinas"])
 def crear_oficina(payload: OficinaCreate, db: Session = Depends(get_db)):
     oficina = Oficina(**payload.model_dump())
     db.add(oficina)
-    db.commit()
-    db.refresh(oficina)
-    return oficina
+    try:
+        db.commit()
+        db.refresh(oficina)
+        return oficina
+    except IntegrityError:
+        db.rollback()
+        # ya existe: devolvemos 409 (o puedes devolver el registro existente con 200)
+        raise HTTPException(status_code=409, detail="Oficina already exists")
 
 @router.get("/oficinas", response_model=list[OficinaRead], dependencies=[Depends(get_current_user)])
 def listar_oficinas(
