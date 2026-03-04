@@ -5,3 +5,7 @@ python-jose[cryptography]
 passlib
 pydantic-settings
 python-multipart
+requests
+beautifulsoup4
+lxml
+apscheduler

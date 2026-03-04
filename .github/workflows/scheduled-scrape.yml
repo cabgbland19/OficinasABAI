@@ -1,0 +1,34 @@
+name: Scheduled Scrape
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # cada 10 minutos (UTC)
+  workflow_dispatch:
+
+jobs:
+  ping_and_scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health (keep alive)
+        run: |
+          curl -fsS "${{ secrets.API_BASE_URL }}/health" > /dev/null
+
+      # Ejemplo: ejecutar scrape 1 vez por hora (cuando el minuto sea 0)
+      - name: Run scrape (hourly)
+        if: ${{ github.event.schedule == '*/10 * * * *' }}
+        run: |
+          MINUTE=$(date -u +%M)
+          if [ "$MINUTE" != "00" ]; then
+            echo "Not top of hour, skipping scrape."
+            exit 0
+          fi
+
+          # Login
+          TOKEN=$(curl -fsS -X POST "${{ secrets.API_BASE_URL }}/auth/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "username=${{ secrets.API_USERNAME }}&password=${{ secrets.API_PASSWORD }}" \
+            | python -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+          # Trigger admin scrape
+          curl -fsS -X POST "${{ secrets.API_BASE_URL }}/admin/scrape/run" \
+            -H "Authorization: Bearer $TOKEN"

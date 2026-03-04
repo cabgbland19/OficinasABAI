@@ -11,7 +11,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     admin_username: str = "admin"
-    admin_password: str = "ChangeMe_123!"
+    admin_password: str = "ChangeMe"
     admin_role: str = "admin"
+    SCRAPE_ENABLED: bool = True
+    SCRAPE_RUN_ON_STARTUP: bool = True
+    SCRAPE_INTERVAL_SECONDS: int = Field(default=3600, ge=60)
+    SCRAPE_SOURCE_URL: str = "https://www.abaigroup.com/donde-encontrarnos/"
 
 settings = Settings()
